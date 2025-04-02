@@ -23,6 +23,9 @@
 #define INT_MAX 2147483647
 
 typedef struct proces proces_t;
+typedef struct mutex_philo {
+    pthread_mutex_t mtx_for_time;
+} mutex_philo_t ;
 
 typedef struct philo {
     int number_of_philo;
@@ -33,7 +36,9 @@ typedef struct philo {
     bool shoul_eat;
     time_t start_time;
     proces_t **proceses;
-    // pthread_mutex_t *fork_mutexes;
+    int exit;
+    mutex_philo_t mutex_philo;
+    pthread_t monitor;
 } philo_t;
 
 typedef struct proces {
@@ -41,12 +46,11 @@ typedef struct proces {
     int id_of_right_fork;
     int id_of_left_fork;
     int count_eat;
-    // bool		simulation_running;
     time_t last_meal;
     pthread_t threead_id;
-    pthread_mutex_t *right_fork;
-    pthread_mutex_t *left_fork;
-    // pthread_mutex_t *write;
+    time_t time_without_food;
+    pthread_mutex_t right_fork;
+    pthread_mutex_t left_fork;
     philo_t *philo;
 } proces_t;
 
@@ -76,8 +80,7 @@ philo_t *init_philo(char *argv[]);
 
 // // start_tread.c
 void create_thread(philo_t *philo);
-void begin_dinner(philo_t *philo)
-;
+void begin_dinner(philo_t *philo);
 
 // time 
 void time_to_sleep(time_t time);
@@ -87,7 +90,7 @@ void delay_for_philo(time_t time_for_delay);
 void	philo_sleep(time_t sleep_time);
 
 
-proces_t **init_proces(philo_t *philo, pthread_mutex_t *fork_mutexes);
+proces_t **init_proces(philo_t *philo);
 // //writing.c
 void output_message(proces_t *proces, status_t status);
 // int print_message(long int time, char *msg);

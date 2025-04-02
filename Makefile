@@ -1,7 +1,7 @@
 NAME = philo
 
 CC = cc
-CFLAGS = -Wall -Wextra -Werror 
+CFLAGS =  -Wextra -Werror 
 
 SRC = main.c parser.c init_philo.c utils.c init.c time.c writing.c
 

@@ -20,7 +20,7 @@
 //     }
 //     return(proces);
 // }
-proces_t **init_proces(philo_t *philo, pthread_mutex_t *fork_mutexes)
+proces_t **init_proces(philo_t *philo)
 {
     proces_t **proces_for_philo;
     int i;
@@ -29,12 +29,11 @@ proces_t **init_proces(philo_t *philo, pthread_mutex_t *fork_mutexes)
     if (!proces_for_philo)
         return NULL;
 
-    for (i = 0; i < philo->number_of_philo; i++)
-    {
+    for (i = 0; i < philo->number_of_philo; i++) {
         proces_for_philo[i] = malloc(sizeof(proces_t));
-        if (!proces_for_philo[i]) {
+        if (!proces_for_philo[i]) 
             return NULL;
-        }
+    
         proces_for_philo[i]->id_of_philo = i;
         proces_for_philo[i]->id_of_right_fork = i;
         proces_for_philo[i]->id_of_left_fork = (i + 1) % philo->number_of_philo;
@@ -42,10 +41,8 @@ proces_t **init_proces(philo_t *philo, pthread_mutex_t *fork_mutexes)
         proces_for_philo[i]->philo = philo;
         proces_for_philo[i]->threead_id = 0;
         proces_for_philo[i]->last_meal = 0;
+        proces_for_philo[i]->time_without_food = 0;
 
-        // Присваиваем вилки
-        proces_for_philo[i]->right_fork = &fork_mutexes[proces_for_philo[i]->id_of_right_fork];
-        proces_for_philo[i]->left_fork = &fork_mutexes[proces_for_philo[i]->id_of_left_fork];
     }
 
     return proces_for_philo;
@@ -79,7 +76,8 @@ philo_t *init_philo(char *argv[])
     if(argv[5])
         philo->input_count_eat = ft_atoi(argv[5]);
     // philo->proceses = init_proces(philo);
-    philo->start_time = get_time_of_day() + 100;
+    philo->start_time = get_time_of_day();
+    philo->exit = 0;
     
     return philo;
 }
