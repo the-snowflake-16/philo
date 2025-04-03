@@ -9,7 +9,8 @@ int main(int argc, char *argv[])
     philo = init_philo(argv);
     if(!philo)
         return(EXIT_FAILURE);
-    begin_dinner(philo);
-    finish_dinner(philo->proceses, philo);
+    start_dinner(philo);
+    // // finish_dinner(philo->proceses, philo);
+    // free(philo);
     return(EXIT_SUCCESS);
 }

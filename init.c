@@ -1,128 +1,160 @@
 #include "philo.h"
 
-void stop_dinner(philo_t *philo)
-{
-    pthread_mutex_t forks[philo->number_of_philo];
 
-    // Destroy mutexes for forks
-    for (int i = 0; i < philo->number_of_philo; i++)
-        pthread_join(philo->proceses[i]->threead_id, NULL);
-    for (int i = 0; i < philo->number_of_philo; i++) {
-        pthread_mutex_destroy(&philo->proceses[i]->right_fork);
-        pthread_mutex_destroy(&philo->proceses[i]->left_fork);
-    }
-}
-// void time_for_living(proces_t *proces)
-// {
-//     printf("philo id  last meal %ld\n",proces->philo->proceses[proces->id_of_philo-1]->last_meal - get_time_of_day());
-// }
-void *monitor(void *varg)
+void init_table(philo_t *philo)
 {
+    int i = 0;
 
-    philo_t *philo = (philo_t *)varg;
-    if(philo->exit == 1)
+    while (i < philo->number_of_philo)
     {
-        printf("Philo died");
-        return NULL;
+        pthread_mutex_init(&philo->proceses[i]->fork, NULL);
+        i++;
     }
-    
+    pthread_mutex_init(&philo->mtx_monitor, NULL);
+    pthread_mutex_init(&philo->mtx_write, NULL);
+    pthread_mutex_init(&philo->mtx_time, NULL);
+    pthread_mutex_init(&philo->mtx_simulation, NULL);
 }
-void *mytread(void *varg)
+
+void finish_dinner(philo_t *philo)
 {
-    proces_t *proces = (proces_t *)varg;
+    int i = 0;
+    while (i < philo->number_of_philo)
+    {
+        pthread_mutex_destroy(&philo->proceses[i]->fork);
+        free(philo->proceses[i]);
+        i++;
+    }
+    pthread_mutex_destroy(&philo->mtx_monitor);
+    pthread_mutex_destroy(&philo->mtx_write);
+    pthread_mutex_destroy(&philo->mtx_time);
+    pthread_mutex_destroy(&philo->mtx_simulation);
+    free(philo->proceses);
+    free(philo);
+}
+void init_fork(philo_t *philo)
+{
+    int i = 0;
 
-    // printf("OK");
+    while (i < philo->number_of_philo)
+    {
+        if (i == philo->number_of_philo - 1)
+            philo->proceses[i]->next_for = philo->proceses[0];
+        else
+            philo->proceses[i]->next_for = philo->proceses[i + 1];
+        i++;
+    }
+}
 
-    delay_for_philo(proces->philo->start_time);
+void sleeping(proces_t *proces)
+{
 
-
-        // printf("Philo %d takes fork %d\n", proces->id_of_philo, proces->id_of_left_fork);
-        // printf("Philo %d takes fork %d\n", proces->id_of_philo, proces->id_of_left_fork);
-    // if (proces->last_meal == 0) proces->last_meal = get_time_of_day() - proces->philo->start_time;
-
-    proces->time_without_food = get_time_of_day() - proces->philo->start_time - proces->last_meal;
-    printf("%d time without meal %ld\n",proces->id_of_philo, proces->time_without_food);
-
-    pthread_mutex_lock(&proces->left_fork);
-    output_message(proces, GET_LEFT_FORK);
-    pthread_mutex_lock(&proces->right_fork);
-    output_message(proces, GET_RIGHT_FORK);
-
-    // pthread_mutex_lock(proces->write);
-   
-    
-    // printf("Philo %d is eating\n", proces->id_of_philo);
-    output_message(proces, EATING);
-
-    proces->count_eat++;
-    time_to_sleep(proces->philo->time_eat);
-    proces->last_meal = get_time_of_day();
-    // usleep(proces->philo->time_eat);
-
-
-    printf("%d last meal %ld\n", proces->id_of_philo, proces->last_meal);
-    // printf("Philo %d finished eating (%d times)\n", proces->id_of_philo, proces->count_eat);
-
-    pthread_mutex_unlock(&proces->left_fork);
-    pthread_mutex_unlock(&proces->right_fork);
-    // pthread_mutex_unlock(proces->write);
     output_message(proces, SLEEPING);
     time_to_sleep(proces->philo->time_sleep);
+    // printf("thinking");
+}
 
-    output_message(proces, THINKING);
+void eating(proces_t *proces)
+{
+    if(proces->id_of_philo % 2 == 0)
+    {
+        pthread_mutex_lock(&proces->fork);
+        output_message(proces, GET_RIGHT_FORK);
+        pthread_mutex_lock(&proces->next_for->fork);
+        output_message(proces, GET_LEFT_FORK);
 
-    // time_for_living(proces);
+    }
+    else
+    {
+        pthread_mutex_lock(&proces->next_for->fork);
+        output_message(proces, GET_LEFT_FORK);
+        pthread_mutex_lock(&proces->fork);
+        output_message(proces, GET_RIGHT_FORK);
+
+    }
+    pthread_mutex_lock(&proces->philo->mtx_time);
+    proces->last_meal = get_time_of_day();
+    pthread_mutex_unlock(&proces->philo->mtx_time);
+    output_message(proces, EATING);
+
+    time_to_sleep(proces->philo->time_eat);
+
+    pthread_mutex_unlock(&proces->fork);
+    pthread_mutex_unlock(&proces->next_for->fork);
+}
+
+void *monitor(void *argv)
+{
+    philo_t *philo = (philo_t *) argv;
+    delay_for_philo(philo->start_time + (philo->time_eat * 3));
+    // time_t time_now = get_time_of_day() - philo->start_time;
+    // printf("first time now %ld\n", time_now);
+
+    int i = 0;
+    while (philo->simulatian_run)
+    {
+        time_t time_now;
+        i = 0;
+        while (i < philo->number_of_philo)
+        {
+            pthread_mutex_lock(&philo->mtx_time);
+            time_now = (get_time_of_day() - philo->proceses[i]->last_meal);
+            pthread_mutex_unlock(&philo->mtx_time);
+            if(time_now >= philo->time_die)
+            {
+                output_message(philo->proceses[i], RELAXING);
+                pthread_mutex_lock(&philo->mtx_monitor);
+                philo->exit = 1;
+                pthread_mutex_unlock(&philo->mtx_monitor);
+            }
+            i++;
+        }
+        usleep(10000);
+    }
+
     return NULL;
 }
 
-
-
-void begin_dinner(philo_t *philo)
+void *philo_routine(void *argv)
 {
-    philo->proceses = init_proces(philo);
-    for(int i = 0; i < philo->number_of_philo; i++)
+    proces_t *proces = (proces_t *)argv;
+    delay_for_philo(proces->philo->start_time);
+
+    while (!proces->philo->exit)
     {
-        pthread_mutex_init(&philo->proceses[i]->right_fork, NULL);
-        pthread_mutex_init(&philo->proceses[i]->left_fork, NULL);
+        if(proces->id_of_philo % 2 == 0)
+            usleep(200);
+        eating(proces);
+        sleeping(proces);
+        output_message(proces, THINKING);
+        // monitor(proces);
     }
-
-
-    // while (!philo->exit)
-    // {
-    //     if (philo->input_count_eat != -1)
-    //     {
-            
-        //     for (int i = 0; i < philo->input_count_eat; i++) {
-        //         for (int i = 0; i < philo->number_of_philo; i++) {
-        //             // printf("OK\n");
-        //             if (pthread_create(&philo->proceses[i]->threead_id, NULL, &mytread, (void *)philo->proceses[i]) != 0)
-        //             {
-        //                 perror("Error");
-        //                 exit(1);
-        //             }
-        //         }
-        //         for (int i = 0; i < philo->number_of_philo; i++)
-        //             pthread_join(philo->proceses[i]->threead_id, NULL);
-        //     }
-        // }
-        // else
-        // {
-            pthread_create(&philo->monitor, NULL, &monitor, (void *)philo->proceses);
-            for (int i = 0; i < philo->number_of_philo; i++) {
-                
-
-                pthread_create(&philo->proceses[i]->threead_id, NULL, &mytread, (void *)philo->proceses[i]);
-                // pthread_join(philo->monitor, NULL);
-            }
-
-            for (int i = 0; i < philo->number_of_philo; i++)
-                pthread_join(philo->proceses[i]->threead_id, NULL);
-            pthread_join(philo->monitor, NULL);
-        // }
-        
-    // }
-            
-    stop_dinner(philo);
+    pthread_mutex_lock(&proces->philo->mtx_simulation);
+    proces->philo->simulatian_run = false;
+    pthread_mutex_unlock(&proces->philo->mtx_simulation);
+    return NULL;
 }
+void start_dinner(philo_t *philo)
+{
+    int i = 0;
+    int j = 0;
+    philo->start_time = get_time_of_day() + (20 * philo->number_of_philo);
+    philo->proceses = init_proces(philo);
 
+    init_table(philo);
+    init_fork(philo);
+    while (i < philo->number_of_philo)
+    {
+        pthread_create(&philo->proceses[i]->threead_id, NULL, &philo_routine, philo->proceses[i]);
+        i++;
+    }
+    pthread_create(&philo->monitor, NULL, &monitor, philo);
 
+    while (j < philo->number_of_philo)
+    {
+        pthread_join(philo->proceses[j]->threead_id, NULL);
+        j++;
+    }
+    pthread_join(philo->monitor, NULL); 
+    finish_dinner(philo);
+}

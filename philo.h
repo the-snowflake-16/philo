@@ -23,9 +23,6 @@
 #define INT_MAX 2147483647
 
 typedef struct proces proces_t;
-typedef struct mutex_philo {
-    pthread_mutex_t mtx_for_time;
-} mutex_philo_t ;
 
 typedef struct philo {
     int number_of_philo;
@@ -33,24 +30,27 @@ typedef struct philo {
     long int time_eat;
     long int time_sleep;
     int input_count_eat;
-    bool shoul_eat;
     time_t start_time;
     proces_t **proceses;
     int exit;
-    mutex_philo_t mutex_philo;
+    bool simulatian_run;
+    pthread_mutex_t mtx_monitor;
+    pthread_mutex_t mtx_time;
+    pthread_mutex_t mtx_write;
+    pthread_mutex_t mtx_relax;
+    pthread_mutex_t mtx_simulation;
     pthread_t monitor;
 } philo_t;
 
 typedef struct proces {
     int id_of_philo;
-    int id_of_right_fork;
-    int id_of_left_fork;
+    int id_fork;
     int count_eat;
     time_t last_meal;
     pthread_t threead_id;
     time_t time_without_food;
-    pthread_mutex_t right_fork;
-    pthread_mutex_t left_fork;
+    pthread_mutex_t fork;
+    struct proces *next_for;
     philo_t *philo;
 } proces_t;
 
@@ -63,11 +63,7 @@ typedef enum status {
     RELAXING = 0,
 } status_t;
 
-// typedef struct philos {
-//     proces_t *proces;
-    
-// } philos_t;
-void *mytread(void *varg);
+
 // parcer.c
 int parser_input(int argc, char *argv[]);
 
@@ -78,21 +74,16 @@ int is_digit(char *s);
 // init_philo.c
 philo_t *init_philo(char *argv[]);
 
-// // start_tread.c
-void create_thread(philo_t *philo);
-void begin_dinner(philo_t *philo);
-
 // time 
 void time_to_sleep(time_t time);
 time_t get_time_of_day(void);
 void delay_for_philo(time_t time_for_delay);
 
-void	philo_sleep(time_t sleep_time);
-
-
 proces_t **init_proces(philo_t *philo);
 // //writing.c
 void output_message(proces_t *proces, status_t status);
 // int print_message(long int time, char *msg);
-void finish_dinner(proces_t **proces_for_philo, philo_t *philo);
+
+// init.c
+void start_dinner(philo_t *philo);
 #endif

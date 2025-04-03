@@ -17,6 +17,8 @@ void time_to_sleep(time_t time)
 }
 void delay_for_philo(time_t time_for_delay)
 {
+    // printf("%ld\n", time_for_delay);
+    // printf("%ld\n", get_time_of_day());
     while (get_time_of_day() < time_for_delay)
-        continue;
+        usleep(200);
 }
