@@ -16,21 +16,22 @@ void print_message(proces_t *proces, char *msg1, char *msg2, status_t status)
         printf("[%ld] %s %d %s\n", time_now, msg1, proces->id_of_philo, msg2);
 }
 
-void output_message(proces_t *proces, status_t status)
+void output_message(proces_t *proces, status_t status, int ckecker1)
 {
     // printf("%d", proces->id_of_philo);
+
     pthread_mutex_lock(&(proces->philo->mtx_write));
-    if(status == GET_RIGHT_FORK)
+    if(status == GET_RIGHT_FORK && !ckecker1)
         print_message(proces, "Philo", "takes right fork", status);
-    if(status == GET_LEFT_FORK)
+    if(status == GET_LEFT_FORK && !ckecker1)
         print_message(proces, "Philo", "takes left fork", status);
-    if(status == EATING)
+    if(status == EATING && !ckecker1)
         print_message(proces, "Philo", "is eating", status);
-    if(status == SLEEPING)
+    if(status == SLEEPING && !ckecker1)
         print_message(proces, "Philo", "is sleeping", status);
-    if(status == THINKING)
+    if(status == THINKING && !ckecker1)
         print_message(proces, "Philo", "is thinking", status);
-    if(status == RELAXING)
+    if(status == RELAXING && !ckecker1)
         print_message(proces, "Philo", "is relaxing", status);
     pthread_mutex_unlock(&(proces->philo->mtx_write));
 }

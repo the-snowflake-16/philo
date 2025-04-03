@@ -81,7 +81,7 @@ void delay_for_philo(time_t time_for_delay);
 
 proces_t **init_proces(philo_t *philo);
 // //writing.c
-void output_message(proces_t *proces, status_t status);
+void output_message(proces_t *proces, status_t status, int ckecker1);
 // int print_message(long int time, char *msg);
 
 // init.c
