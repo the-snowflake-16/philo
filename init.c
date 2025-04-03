@@ -85,13 +85,16 @@ void eating(proces_t *proces)
 
 void *monitor(void *argv)
 {
+    bool check;
     philo_t *philo = (philo_t *) argv;
     delay_for_philo(philo->start_time + (philo->time_eat * 3));
     // time_t time_now = get_time_of_day() - philo->start_time;
     // printf("first time now %ld\n", time_now);
-
-    int i = 0;
-    while (philo->simulatian_run)
+    pthread_mutex_lock(&philo->mtx_simulation);
+    check = philo->simulatian_run;
+    pthread_mutex_unlock(&philo->mtx_simulation);
+    int i;
+    while (check)
     {
         time_t time_now;
         i = 0;
@@ -109,7 +112,11 @@ void *monitor(void *argv)
             }
             i++;
         }
-        usleep(10000);
+        usleep(1000);
+        pthread_mutex_lock(&philo->mtx_simulation);
+        check = philo->simulatian_run;
+        pthread_mutex_unlock(&philo->mtx_simulation);
+
     }
 
     return NULL;
@@ -117,17 +124,22 @@ void *monitor(void *argv)
 
 void *philo_routine(void *argv)
 {
+    int checker;
     proces_t *proces = (proces_t *)argv;
     delay_for_philo(proces->philo->start_time);
-
-    while (!proces->philo->exit)
+    pthread_mutex_lock(&proces->philo->mtx_monitor);
+    checker = proces->philo->exit;
+    pthread_mutex_unlock(&proces->philo->mtx_monitor);
+    while (!checker)
     {
         if(proces->id_of_philo % 2 == 0)
             usleep(200);
         eating(proces);
         sleeping(proces);
         output_message(proces, THINKING);
-        // monitor(proces);
+        pthread_mutex_lock(&proces->philo->mtx_monitor);
+        checker = proces->philo->exit;
+        pthread_mutex_unlock(&proces->philo->mtx_monitor);
     }
     pthread_mutex_lock(&proces->philo->mtx_simulation);
     proces->philo->simulatian_run = false;

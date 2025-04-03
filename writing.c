@@ -6,6 +6,8 @@ void print_message(proces_t *proces, char *msg1, char *msg2, status_t status)
         return;
 
     time_t time_now = get_time_of_day() - proces->philo->start_time;
+    // time_t time_now = proces->philo->time_now;
+// printf("[%ld] %s %d %s\n", time_now, msg1, proces->id_of_philo, msg2); 
     if(status == GET_RIGHT_FORK)
         printf("[%ld] %s %d %s\n", time_now, msg1, proces->id_of_philo, msg2);
     else if(status == GET_LEFT_FORK)
