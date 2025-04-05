@@ -73,7 +73,33 @@ void sleeping_thinking(proces_t *proces)
     output_message(proces, THINKING);
     // printf("thinking");
 }
-
+void is_philo_full(proces_t *proces)
+{
+    int i;
+    int all_full;
+    
+    // Only check if the philosopher has reached their meal count
+    if (proces->count_eat >= proces->philo->input_count_eat)
+    {
+        pthread_mutex_lock(&proces->philo->mtx_monitor);
+        all_full = 1;
+        // Check if all philosophers have eaten enough
+        for (i = 0; i < proces->philo->number_of_philo; i++)
+        {
+            if (proces->philo->proceses[i]->count_eat < proces->philo->input_count_eat)
+            {
+                all_full = 0;
+                break;
+            }
+        }
+        if (all_full)
+        {
+            proces->philo->exit = 1;
+            set_simulation_mtx(proces->philo, false);
+        }
+        pthread_mutex_unlock(&proces->philo->mtx_monitor);
+    }
+}
 void eating(proces_t *proces) {
     // Take forks
     if (proces->id_of_philo % 2 == 0) {
@@ -91,9 +117,13 @@ void eating(proces_t *proces) {
     // Update meal time
     pthread_mutex_lock(&proces->philo->mtx_time);
     proces->last_meal = get_time_of_day();
+    proces->count_eat++;
     pthread_mutex_unlock(&proces->philo->mtx_time);
+
     
     output_message(proces, EATING);
+    if(proces->philo->input_count_eat != -1)
+        is_philo_full(proces);
     time_to_sleep(proces->philo->time_eat);
 
     // Release forks
@@ -119,9 +149,9 @@ void *monitor(void *argv) {
             
             if (time_since_meal > philo->time_die) {
                 pthread_mutex_lock(&philo->mtx_write);
-                printf("[%ld] philo %d died\n", 
+                printf("%ld %d died\n", 
                       current_time - philo->start_time, 
-                      philo->proceses[i]->id_of_philo);
+                      philo->proceses[i]->id_of_philo + 1);
                 pthread_mutex_unlock(&philo->mtx_write);
                 
                 pthread_mutex_lock(&philo->mtx_monitor);

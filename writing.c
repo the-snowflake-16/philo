@@ -1,36 +1,37 @@
 #include "philo.h"
 
-void print_message(proces_t *proces, char *msg1, char *msg2, status_t status)
+#include "philo.h"
+
+void print_message(proces_t *proces, const char *msg)
 {
-    if (!proces || !proces->philo)
+    if (!proces || !proces->philo || !get_simulation_mtx(proces->philo))
         return;
 
     time_t time_now = get_time_of_day() - proces->philo->start_time;
-    // time_t time_now = proces->philo->time_now;
-// printf("[%ld] %s %d %s\n", time_now, msg1, proces->id_of_philo, msg2); 
-    if(status == GET_RIGHT_FORK && get_simulation_mtx(proces->philo))
-        printf("[%ld] %s %d %s\n", time_now, msg1, proces->id_of_philo, msg2);
-    else if(status == GET_LEFT_FORK && get_simulation_mtx(proces->philo))
-        printf("[%ld] %s %d %s \n", time_now, msg1, proces->id_of_philo, msg2);
-    else if((status == EATING || status == SLEEPING || status == THINKING || status == RELAXING) && get_simulation_mtx(proces->philo))
-        printf("[%ld] %s %d %s\n", time_now, msg1, proces->id_of_philo, msg2);
+    printf("%ld %d %s\n", time_now, proces->id_of_philo + 1, msg);
 }
 
 void output_message(proces_t *proces, status_t status)
 {
-    // printf("%d", proces->id_of_philo);
     pthread_mutex_lock(&(proces->philo->mtx_write));
-    if(status == GET_RIGHT_FORK  && get_simulation_mtx(proces->philo))
-        print_message(proces, "Philo", "takes right fork", status);
-    if(status == GET_LEFT_FORK  && get_simulation_mtx(proces->philo))
-        print_message(proces, "Philo", "takes left fork", status);
-    if(status == EATING  && get_simulation_mtx(proces->philo))
-        print_message(proces, "Philo", "is eating", status);
-    if(status == SLEEPING && get_simulation_mtx(proces->philo))
-        print_message(proces, "Philo", "is sleeping", status);
-    if(status == THINKING  && get_simulation_mtx(proces->philo))
-        print_message(proces, "Philo", "is thinking", status);
-    if(status == RELAXING && get_simulation_mtx(proces->philo))
-        print_message(proces, "Philo", "is relaxing", status);
+    
+    if (!get_simulation_mtx(proces->philo)) {
+        pthread_mutex_unlock(&(proces->philo->mtx_write));
+        return;
+    }
+
+    if (status == GET_RIGHT_FORK)
+        print_message(proces, "has taken a right fork");
+    else if (status == GET_LEFT_FORK)
+        print_message(proces, "has taken a left fork");
+    else if (status == EATING)
+        print_message(proces, "is eating");
+    else if (status == SLEEPING)
+        print_message(proces, "is sleeping");
+    else if (status == THINKING)
+        print_message(proces, "is thinking");
+    else if (status == RELAXING)
+        print_message(proces, "is relaxing");
+    
     pthread_mutex_unlock(&(proces->philo->mtx_write));
 }
