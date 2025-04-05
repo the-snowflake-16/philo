@@ -81,9 +81,10 @@ void delay_for_philo(time_t time_for_delay);
 
 proces_t **init_proces(philo_t *philo);
 // //writing.c
-void output_message(proces_t *proces, status_t status, int ckecker1);
+void output_message(proces_t *proces, status_t status);
 // int print_message(long int time, char *msg);
 
 // init.c
 void start_dinner(philo_t *philo);
+bool get_simulation_mtx(philo_t *philo);
 #endif
